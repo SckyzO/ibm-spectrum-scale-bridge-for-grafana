@@ -76,6 +76,85 @@ def query_last_setup():
                                             'index': 0}}
 
 
+def query_arrays_setup():
+    global key1, col1, labels, filtersMap, dps1, ts1, ts2, metricTS, metricTS1, data, data1, jreq
+
+    key1 = Key._from_string('scale-11|CPU|cpu_system', '')
+    col1 = ColumnInfo(name='cpu_user', semType=1, keys=(key1,), column=0)
+    filtersMap = [{'node': 'scale-11'}, {'node': 'scale-12'}, {'node': 'scale-13'}, {'node': 'scale-14'}, {'node': 'scale-15'}, {'node': 'scale-16'}]
+    labels = ['node']
+    dps1 = [[1739214990, 3], [1739215050, 2], [1739215110, 3], [1739215170, 4], [1739215230, 3]]
+    dps2 = []
+    ts1 = TimeSeries(col1, dps1, filtersMap, labels)
+    ts2 = TimeSeries(col1, dps2, filtersMap, labels)
+    metricTS = MetricTimeSeries('cpu_system', '')
+    metricTS.timeseries = [ts1]
+    data = {'cpu_user': metricTS}
+    metricTS1 = MetricTimeSeries('cpu_system', '')
+    metricTS1.timeseries = [ts2]
+    data1 = {'cpu_user': metricTS1}
+    jreq = {'start': 1739214930519, 'end': 1739215230519, 'arrays': True,
+            'inputQuery': {'aggregator': 'noop', 'downsample': '1m-avg',
+                           'filters': [
+                               {'filter': 'scale-11', 'groupBy': False,
+                                'tagk': 'node', 'type': 'pm_filter'
+                                }],
+                           'metric': 'cpu_system', 'index': 0
+                           }
+            }
+
+
+def query_raw_data_setup():
+    global jreq, jreq1, jreq2, jreq3, jreq4
+
+    jreq = {'start': 1739214930519, 'end': 1739215230519, 'arrays': True,
+            'inputQuery': {'aggregator': 'noop', 'downsample': '1m-avg',
+                           'filters': [
+                               {'filter': 'scale-11', 'groupBy': False,
+                                'tagk': 'node', 'type': 'pm_filter'
+                                }],
+                           'metric': 'cpu_system', 'index': 0,
+                           'shouldComputeRate': False, 'isCounter': False
+                           }
+            }
+    jreq1 = {'start': 1739214930519, 'end': 1739215230519, 'arrays': True,
+             'inputQuery': {'aggregator': 'noop', 'downsample': '1m-avg',
+                            'filters': [
+                                {'filter': 'scale-11', 'groupBy': False,
+                                 'tagk': 'node', 'type': 'pm_filter'
+                                 }],
+                            'metric': 'cpu_system', 'index': 0,
+                            'shouldComputeRate': True, 'isCounter': False
+                            }
+             }
+    jreq2 = {'start': 1739214930519, 'end': 1739215230519, 'arrays': True,
+             'inputQuery': {'aggregator': 'noop', 'downsample': '1m-avg',
+                            'filters': [
+                                {'filter': 'scale-11', 'groupBy': False,
+                                 'tagk': 'node', 'type': 'pm_filter'
+                                 }],
+                            'metric': 'cpu_system', 'index': 0,
+                            'shouldComputeRate': True, 'isCounter': True
+                            }
+             }
+    jreq3 = {'start': 1746277483949, 'end': None,
+             'inputQuery': {'aggregator': 'noop', 'downsampleAggregator': 'avg',
+                            'downsampleFillPolicy': 'none',
+                            'metric': 'cpu_contexts',
+                            'disableDownsampling': True,
+                            'explicitTags': True, 'index': 0
+                            }
+             }
+    jreq4 = {'start': 1746277483949, 'end': None,
+             'inputQuery': {'aggregator': 'noop', 'downsampleAggregator': 'avg',
+                            'downsampleFillPolicy': 'none',
+                            'metric': 'cpu_contexts',
+                            'disableDownsampling': True,
+                            'explicitTags': False, 'index': 0
+                            }
+             }
+
+
 @with_setup(my_setup)
 def test_case01():
     ts = TimeSeries(col3, dps2, filtersMap, labels)
@@ -110,6 +189,7 @@ def test_case03():
         assert 'gpfs_fs_name' in resp[0].get('tags')
         assert 'node' in resp[0].get('tags')
         assert 'gpfs_cluster_name' in resp[0].get('tags')
+        assert isinstance(resp[0].get('dps'), dict)
 
 
 @with_setup(my_setup)
@@ -139,3 +219,54 @@ def test_case05():
         assert resp[0].get('metric') == "cpu_user"
         assert 'gpfs_fs_name' not in resp[0].get('tags')
         assert 'node' in resp[0].get('tags')
+
+
+@with_setup(query_arrays_setup)
+def test_case06():
+    with mock.patch('source.metadata.MetadataHandler') as md:
+        md_instance = md.return_value
+        logger = logging.getLogger(__name__)
+        opentsdb = OpenTsdbApi(logger, md_instance, '9999')
+        resp = opentsdb.format_response(data, jreq)
+        assert set(resp[0].keys()) == set(['metric', 'dps', 'tags', 'aggregatedTags'])
+        assert resp[0].get('metric') == "cpu_system"
+        assert 'node' in resp[0].get('tags')
+        assert isinstance(resp[0].get('dps'), list)
+
+
+@with_setup(query_arrays_setup)
+def test_case07():
+    with mock.patch('source.metadata.MetadataHandler') as md:
+        md_instance = md.return_value
+        logger = logging.getLogger(__name__)
+        opentsdb = OpenTsdbApi(logger, md_instance, '9999')
+        resp = opentsdb.format_response(data1, jreq)
+        assert set(resp[0].keys()) == set(['metric', 'dps', 'tags', 'aggregatedTags'])
+        assert resp[0].get('metric') == "cpu_system"
+        assert 'node' in resp[0].get('tags')
+        assert isinstance(resp[0].get('dps'), list)
+        assert len(resp[0].get('dps')) == 0
+
+
+@with_setup(query_raw_data_setup)
+def test_case08():
+    q = jreq.get('inputQuery')
+    args = {}
+    args['rawData'] = q.get('explicitTags', False) or q.get('isCounter', False)
+    assert args.get('rawData') == False
+    q1 = jreq1.get('inputQuery')
+    args1 = {}
+    args1['rawData'] = q1.get('explicitTags', False) or q1.get('isCounter', False)
+    assert args1.get('rawData') == False
+    q2 = jreq2.get('inputQuery')
+    args2 = {}
+    args2['rawData'] = q2.get('explicitTags', False) or q2.get('isCounter', False)
+    assert args2.get('rawData') == True
+    q3 = jreq3.get('inputQuery')
+    args3 = {}
+    args3['rawData'] = q3.get('explicitTags', False) or q3.get('isCounter', False)
+    assert args3.get('rawData') == True
+    q4 = jreq4.get('inputQuery')
+    args4 = {}
+    args4['rawData'] = q4.get('explicitTags', False) or q4.get('isCounter', False)
+    assert args4.get('rawData') == False

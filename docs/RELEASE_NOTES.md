@@ -1,3 +1,55 @@
+# Version 8.0.6 (05/28/2025)
+Published example dashboard for observing high level health status of all gpfs devices rgistered and managed with Grafana\
+Improved rawCounters setting management by PrometheusExporter\
+Added RAWDATA to the Dockerfile editable command line arguments\
+Added HTTP Api REST endpoint for querying sensor metrics details\
+
+Changed the Dockerfile parent image to the registry.access.redhat.com/ubi9/ubi:9.6-1747219013 \ 
+
+Tested with OpenTSDB version 2.4
+Tested with Grafana version 12.0.0
+Tested with RedHat community-powered Grafana operator v.5
+
+
+
+# Version 8.0.5 (05/10/2025)
+Published example dashboards for monitoring ESS Hardware metrics: \
+- ESS Hardware Performance overview \
+- HW Components Temperature \
+- HW Fan Rotation \
+- PSU Power(mA*Volt) \
+Published example dashboards for monitoring the IBM Storage Scale cloud native project as part of Openshift Monitoring stack: \
+- Openshift cluster and IBM Storage Scale cloud native project overview\
+Added example yaml file for Deploying Prometheus as Grafanadatasource on an Openshift cluster via Grafana-operator v5. \
+Added example yaml file for Deploying GrafanaDashboard resource for monitoring IBM Storage Scale container native project on an Openshift cluster via Grafana-operator v5. \
+Added GPFSTSCOM sensor to PrometheusExporter supported sensors\
+
+Changed the Dockerfile parent image to the registry.access.redhat.com/ubi9/ubi:9.5-1745854298 \ 
+
+Tested with OpenTSDB version 2.4
+Tested with Grafana version 12.0.0
+Tested with RedHat community-powered Grafana operator v.5
+
+
+
+# Version 8.0.4 (04/10/2025)
+Added Deployment scripts to expose GPFS metrics to the Openshift Monitoring stack
+Published example dashboards for monitoring ESS devices: \
+- System load overview \
+- CPU utilization details \
+- Network Data transfer details \
+- InfiniBand Data transfer details \
+- Filesystem Data transfers rate \
+- Filesystem Data transfer rate per Node\
+- Filesystem Data transfers rate \
+Reworked Dockerfile allowing compile python requirements list during grafana-bridge image build \
+Changed the Dockerfile parent image to the registry.access.redhat.com/ubi9/ubi:9.5-1742918310 \ 
+
+Tested with Grafana version 11.5.0
+Tested with RedHat community-powered Grafana operator v.5
+
+
+
 # Version 8.0.3 (01/20/2025)
 Added GPFSPoolCap, GPFSInodeCap and GPFSFCMDA sensors to the supported PrometheusExporter endpoints \
 Added HTTP Api REST endpoint for querying last metric sample (OpenTSDB plugin)

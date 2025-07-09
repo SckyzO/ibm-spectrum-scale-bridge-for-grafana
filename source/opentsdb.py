@@ -27,7 +27,9 @@ from messages import ERR, MSG
 from collections import defaultdict
 from collector import SensorCollector, QueryPolicy
 from utils import getTimeMultiplier, execution_time, cond_execution_time
-from typing import List
+from typing import List, TypeVar
+
+T = TypeVar('T', dict, list)
 
 
 class OpenTsdbApi(object):
@@ -158,7 +160,10 @@ class OpenTsdbApi(object):
                 args['filters'] = filters
                 args['grouptags'] = grouptags
 
-        args['rawData'] = q.get('explicitTags', False)
+        if 'arrays' in jreq:
+            args['dpsArrays'] = jreq['arrays']
+
+        args['rawData'] = q.get('explicitTags', False) or q.get('isCounter', False)
 
         args['sensor'] = sensor
         args['period'] = period
@@ -379,7 +384,7 @@ class OpenTsdbApi(object):
     @cherrypy.config(**{'tools.json_in.force': False})
     @cherrypy.tools.json_in()  # @UndefinedVariable
     @cherrypy.tools.json_out()  # @UndefinedVariable
-    def POST(self):
+    def POST(self, **params):
         ''' Process POST. tools.json_in.force is set to False for
         compatability between versions of grafana < 3 and version 3.'''
 
@@ -398,6 +403,9 @@ class OpenTsdbApi(object):
             if jreq.get('queries') is None:
                 self.logger.error(MSG['QueryError'].format('empty'))
                 raise cherrypy.HTTPError(400, ERR[400])
+
+            if params and params.get('arrays') == 'true':
+                jreq['arrays'] = True
 
             return self.query(jreq)
 
@@ -446,13 +454,15 @@ class SingleTimeSeriesResponse(object):
         self.tags = tags or defaultdict(list)
         self.aggregatedTags = aggrTags or []
 
-    def to_dict(self, dps: dict = None):
+    def to_dict(self, dps: T = None):
         ''' Converts the SingleTimeSeriesResponse object to dict. '''
         res = self.__dict__
         # Since a single Timeseries might have a huge number of datapoints (dps),
         # first convert object to dict and then fetch the dict of dps to it
         if dps:
             res['dps'] = dps
+        elif isinstance(dps, list):
+            res['dps'] = []
         return res
 
 
